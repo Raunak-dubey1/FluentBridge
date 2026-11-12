@@ -6,11 +6,15 @@ const FriendCard = ({ friend }) => {
     <div className="card bg-base-200 hover:shadow-md transition-shadow">
       <div className="card-body p-4">
         {/* USER INFO */}
-        <div className="flex items-center gap-3 mb-3">
-          <div className="avatar size-12">
-            <img src={friend.profilePic} alt={friend.fullName} />
+        <div className="flex items-center gap-3 mb-3 min-w-0">
+          <div className="avatar size-12 shrink-0">
+            <img
+              src={friend.profilePic}
+              alt={friend.fullName}
+              className="rounded-full object-cover"
+            />
           </div>
-          <h3 className="font-semibold truncate">{friend.fullName}</h3>
+          <h3 className="font-semibold truncate text-base">{friend.fullName}</h3>
         </div>
 
         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -20,13 +24,14 @@ const FriendCard = ({ friend }) => {
           </span>
         </div>
 
-        <Link to={`/chat/${friend._id}`} className="btn btn-outline w-full">
+        <Link to={`/chat/${friend._id}`} className="btn btn-outline btn-sm sm:btn-md w-full">
           Message
         </Link>
       </div>
     </div>
   );
 };
+
 export default FriendCard;
 
 export function getLanguageFlag(language) {
