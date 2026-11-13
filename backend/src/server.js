@@ -5,6 +5,7 @@ import path from "path"
 import authRoute from "./routes/auth.route.js";
 import userRoute from "./routes/user.route.js";
 import chatRoute from "./routes/chat.route.js";
+import healthRoute from "./routes/health.route.js";
 
 
 import cors from "cors"
@@ -27,6 +28,8 @@ app.use(cookieParser());
 app.use("/api/auth",authRoute)
 app.use("/api/users",userRoute)
 app.use("/api/chat",chatRoute)
+app.use("/api/health",healthRoute)
+app.use("/health",healthRoute)
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));

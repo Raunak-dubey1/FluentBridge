@@ -1,62 +1,63 @@
 import { Link, useLocation } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
-import { BellIcon, LogOutIcon,Network } from "lucide-react";
+import { BellIcon, LogOutIcon, ShipWheelIcon } from "lucide-react";
 import ThemeSelector from "./ThemeSelector";
 import useLogout from "../hooks/useLogout";
 
-const Navbar = () => {
+const Navbar = ({ showSidebar = false }) => {
   const { authUser } = useAuthUser();
   const location = useLocation();
   const isChatPage = location.pathname?.startsWith("/chat");
-
-  // const queryClient = useQueryClient();
-  // const { mutate: logoutMutation } = useMutation({
-  //   mutationFn: logout,
-  //   onSuccess: () => queryClient.invalidateQueries({ queryKey: ["authUser"] }),
-  // });
-
   const { logoutMutation } = useLogout();
 
   return (
     <nav className="bg-base-200 border-b border-base-300 sticky top-0 z-30 h-16 flex items-center">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-end w-full">
-          {/* LOGO - ONLY IN THE CHAT PAGE */}
-          {isChatPage && (
-            <div className="pl-5">
-              <Link to="/" className="flex items-center gap-2.5">
-                <Network className="size-9 text-primary" />
-                <span className="text-3xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary  tracking-wider">
-                  FluentBridge
-                </span>
-              </Link>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 sm:gap-4 ml-auto">
-            <Link to={"/notifications"}>
-              <button className="btn btn-ghost btn-circle">
-                <BellIcon className="h-6 w-6 text-base-content opacity-70" />
-              </button>
+      <div className="w-full px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between w-full">
+          {/* LOGO - VISIBLE ON MOBILE, OR ON CHAT PAGE / WHEN NO SIDEBAR */}
+          <div className={`items-center ${isChatPage || !showSidebar ? "flex" : "flex lg:hidden"}`}>
+            <Link to="/" className="flex items-center gap-2">
+              <ShipWheelIcon className="size-7 sm:size-8 text-primary" />
+              <span className="text-xl sm:text-2xl font-bold font-mono bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary tracking-wider">
+                FluentBridge
+              </span>
             </Link>
           </div>
 
-          {/* TODO */}
-          <ThemeSelector />
+          {/* RIGHT SIDE CONTROLS */}
+          <div className="flex items-center gap-1.5 sm:gap-3 ml-auto">
+            <Link to="/notifications" className="hidden sm:inline-flex">
+              <button className="btn btn-ghost btn-circle btn-sm sm:btn-md" aria-label="Notifications">
+                <BellIcon className="size-5 sm:size-6 text-base-content opacity-70" />
+              </button>
+            </Link>
 
-          <div className="avatar">
-            <div className="w-9 rounded-full">
-              <img src={authUser?.profilePic} alt="User Avatar" rel="noreferrer" />
+            <ThemeSelector />
+
+            <div className="avatar">
+              <div className="w-8 sm:w-9 rounded-full ring-1 ring-base-300">
+                <img
+                  src={authUser?.profilePic}
+                  alt={authUser?.fullName || "User Avatar"}
+                  className="rounded-full object-cover"
+                  rel="noreferrer"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Logout button */}
-          <button className="btn btn-ghost btn-circle" onClick={logoutMutation}>
-            <LogOutIcon className="h-6 w-6 text-base-content opacity-70" />
-          </button>
+            {/* Logout button */}
+            <button
+              className="btn btn-ghost btn-circle btn-sm sm:btn-md"
+              onClick={logoutMutation}
+              aria-label="Logout"
+            >
+              <LogOutIcon className="size-5 sm:size-6 text-base-content opacity-70" />
+            </button>
+          </div>
         </div>
       </div>
     </nav>
   );
 };
+
 export default Navbar;
