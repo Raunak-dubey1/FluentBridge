@@ -131,16 +131,21 @@ export async function acceptFriendRequest(req,res){
 
 export async function getFriendRequest(req,res){
     try{
-        const incomingReqs=await FriendRequest.find({
-            recipient:req.user.id,
+        const currentUserId = req.user._id || req.user.id;
+        const incomingReqsRaw=await FriendRequest.find({
+            recipient:currentUserId,
             status:"pending"
-        }).populate("sender","fullName profilePic nativeLanguage learningLanguage")
+        }).populate("sender","fullName profilePic nativeLanguage learningLanguage nativeLanguages learningLanguages")
 
         //the req that we have sended and get accepted
-        const acceptedReqs=await FriendRequest.find({
-            sender:req.user.id,
+        const acceptedReqsRaw=await FriendRequest.find({
+            sender:currentUserId,
             status:"accepted"
-        }).populate("recipient","fullName profilePic");     
+        }).populate("recipient","fullName profilePic nativeLanguage learningLanguage nativeLanguages learningLanguages");     
+
+        // Filter out orphaned requests where user no longer exists
+        const incomingReqs = incomingReqsRaw.filter(r => r && r.sender);
+        const acceptedReqs = acceptedReqsRaw.filter(r => r && r.recipient);
 
         res.status(200).json({incomingReqs,acceptedReqs})
     }catch(error){
@@ -151,10 +156,13 @@ export async function getFriendRequest(req,res){
 
 export async function getOutgoingFriendReqs(req,res){
     try{
-        const outgoingRequests=await FriendRequest.find({
-            sender:req.user._id,
+        const currentUserId = req.user._id || req.user.id;
+        const outgoingRequestsRaw=await FriendRequest.find({
+            sender:currentUserId,
             status:"pending"
-        }).populate("recipient","fullName profilePic nativeLanguage learningLanguage")
+        }).populate("recipient","fullName profilePic nativeLanguage learningLanguage nativeLanguages learningLanguages")
+
+        const outgoingRequests = outgoingRequestsRaw.filter(r => r && r.recipient);
 
         res.status(200).json({outgoingRequests})
     }catch(error){
