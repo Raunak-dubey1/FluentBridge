@@ -50,6 +50,8 @@ export const FriendPage = () => {
     );
   }
 
+  if (isError) return <p role="alert" className="p-6 text-error">{error.response?.data?.message || "Could not load friends. Please refresh and try again."}</p>;
+
   // Empty state
   if (friends.length === 0) {
     return (

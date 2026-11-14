@@ -7,22 +7,22 @@ export async function signup(req,res){
 
     try{
         if(!email||!fullName||!password)
-            res.status(400).json({message:"All the Fields are Required"});
+            return res.status(400).json({message:"All the Fields are Required"});
         
         if(password.length<8) 
-            res.status(401).json({message:"Password length should be more than 7"})
+            return res.status(400).json({message:"Password length should be more than 7"})
         
         // verifying if it is a valid mail or not 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!emailRegex.test(email)) 
-        res.status(402).json({message:"Provide a Valid mail id "})
+        return res.status(400).json({message:"Provide a Valid mail id "})
          
         //Checking if thier a existing mail or we can say user 
         const ExistingUser=await User.findOne({email});
 
         if(ExistingUser)  
-            res.status(400).json({message:"email already exist , Try other email"})
+            return res.status(400).json({message:"email already exist , Try other email"})
  
         const idx=Math.floor(Math.random()*100)+1;
         const randomAvatar=`https://api.dicebear.com/9.x/adventurer/png?seed=${idx}`;
@@ -125,10 +125,12 @@ export async function onboard(req,res){
             ].filter(Boolean) //filter method to avoid the false value 
         });
     }
-        const updatedUser=await User.findByIdAndUpdate(userId,{
-            ...req.body,
-            isOnboarded:true
-        },{new:true})
+        const updatedUser = await User.findById(userId).select("-password");
+        if (!updatedUser) return res.status(404).json({ message: "User not found" });
+        Object.assign(updatedUser, { fullName, nativeLanguage, learningLanguage, bio, location, isOnboarded: true });
+        updatedUser.nativeLanguages = [nativeLanguage.trim().toLowerCase()];
+        updatedUser.learningLanguages = [{ language: learningLanguage.trim().toLowerCase() }];
+        await updatedUser.save();
  
          if(!updatedUser)
             return res.status(404).json({message:"User not found"})

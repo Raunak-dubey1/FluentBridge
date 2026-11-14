@@ -1,3 +1,4 @@
+import { updateProfile, saveLanguage, deleteLanguage, endorseUser, getEndorsements } from "../controllers/profile.controller.js";
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { 
@@ -13,6 +14,12 @@ const router =express.Router();
 
 router.use(protectRoute);// to apply the auth middleware to every route here
 
+router.put("/profile", updateProfile);
+router.post("/languages", saveLanguage);
+router.put("/languages/:language", saveLanguage);
+router.delete("/languages/:language", deleteLanguage);
+router.get("/endorsements", getEndorsements);
+router.post("/:id/endorse", endorseUser);
 router.get("/",getRecommendedUsers);
 router.get("/friends",getMyFriends);
 

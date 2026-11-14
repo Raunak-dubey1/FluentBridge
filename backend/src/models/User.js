@@ -1,75 +1,39 @@
-import mongoose from "mongoose"
-import bcrypt from "bcryptjs"
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import { LEVELS, GOALS, normalizeLanguages } from "../lib/learning.js";
+const learningLanguageSchema = new mongoose.Schema({
+  language: { type: String, required: true, trim: true, lowercase: true },
+  level: { type: String, enum: LEVELS, default: "A1" },
+  goal: { type: String, enum: GOALS, default: GOALS[0] },
+  isVerified: { type: Boolean, default: false },
+  stats: {
+    callMinutes: { type: Number, default: 0, min: 0 },
+    messagesSent: { type: Number, default: 0, min: 0 },
+    endorsementsCount: { type: Number, default: 0, min: 0 },
+  },
+}, { _id: false });
 const userSchema = new mongoose.Schema({
-  fullName:{
-    type:String,
-    require:true
-  },
-  email:{
-    require:true,
-    unique:true,
-    type:String
-  },
-  password:{
-    require:true,
-    type:String,
-    minlength:8
-  },
-  bio:{
-    type:String,
-    default:""
-  },
-  profilePic:{
-    type:String,
-    default:""
-  },
-  nativeLanguage:{
-    require:true,
-    type:String,
-  },
-  learningLanguage:{
-    require:true,
-    type:String,
-  },
-  profilePic:{
-    type:String,
-    default:""
-  },
-  location:{
-    require:true,
-    type:String,
-  },
-  isOnboarded:{
-    type:Boolean,
-    default:false
-  },
-  friends:[
-    {
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"User"
-    }
-  ]
-},{timestamps:true})
-
-//hashing the password using pre hook
-
-userSchema.pre("save",async function(next){
-     
-    if(!this.isModified("password")) return next();
-
-    try{
-      const salt=await bcrypt.genSalt(10);
-      this.password=await bcrypt.hash(this.password,salt)
-
-      next();
-    }catch(error){
-    console.log(error);
-    }
-})
-
-userSchema.methods.checkPassword=async function(enteredPassword){
-  const isCorrect=await bcrypt.compare(enteredPassword,this.password);
-  return isCorrect
-}
-
-export const User= mongoose.model("User",userSchema)
+  fullName: { type: String, required: true, trim: true, maxlength: 100 },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true, minlength: 8 },
+  bio: { type: String, default: "", maxlength: 1000 },
+  profilePic: { type: String, default: "" },
+  nativeLanguage: String,
+  learningLanguage: String,
+  nativeLanguages: { type: [String], default: [] },
+  learningLanguages: { type: [learningLanguageSchema], default: [] },
+  interests: { type: [String], default: [] },
+  availability: { type: [String], default: ["Flexible"] },
+  location: { type: String, default: "", maxlength: 150 },
+  timezone: { type: String, default: "", maxlength: 100 },
+  isOnboarded: { type: Boolean, default: false },
+  friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+}, { timestamps: true, optimisticConcurrency: true });
+userSchema.post("init", function (doc) { normalizeLanguages(doc); });
+userSchema.pre("validate", function () { normalizeLanguages(this); });
+userSchema.pre("save", async function () {
+  if (this.isModified("password")) this.password = await bcrypt.hash(this.password, 10);
+});
+userSchema.methods.checkPassword = function (password) { return bcrypt.compare(password, this.password); };
+userSchema.set("toJSON", { transform(_doc, result) { delete result.password; return result; } });
+export const User = mongoose.model("User", userSchema);

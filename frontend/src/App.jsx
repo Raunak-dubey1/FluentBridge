@@ -1,3 +1,4 @@
+import DashboardPage from "./pages/DashboardPage.jsx";
 import { Navigate, Route, Routes } from "react-router";
 
 import HomePage from "./pages/HomePage.jsx";
@@ -28,6 +29,7 @@ const App = () => {
   return (
     <div className="h-screen" data-theme={theme}>
       <Routes>
+        <Route path="/dashboard" element={isAuthenticated && isOnboarded ? <Layout showSidebar={true}><DashboardPage /></Layout> : <Navigate to={!isAuthenticated ? "/login" : "/onboarding"} />} />
         <Route
           path="/"
           element={

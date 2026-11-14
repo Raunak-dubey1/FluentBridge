@@ -2,9 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { acceptFriendRequest, getFriendRequests } from "../lib/api";
 import { BellIcon, ClockIcon, MessageSquareIcon, UserCheckIcon } from "lucide-react";
 import NoNotificationsFound from "../components/NoNotificationsFound";
+import useAuthUser from "../hooks/useAuthUser";
+import { label, learningLanguages } from "../constants/learning";
+import { Link } from "react-router";
 
 const NotificationsPage = () => {
   const queryClient = useQueryClient();
+  const { authUser } = useAuthUser();
+  const verified = learningLanguages(authUser).filter(l => l.isVerified);
 
   const { data: friendRequests, isLoading } = useQuery({
     queryKey: ["friendRequests"],
@@ -26,6 +31,8 @@ const NotificationsPage = () => {
     <div className="p-3 sm:p-6 lg:p-8">
       <div className="container mx-auto max-w-4xl space-y-6 sm:space-y-8">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4 sm:mb-6">Notifications</h1>
+
+        {verified.map(l => <Link key={l.language} to="/dashboard" className="card bg-success/10 border border-success/30 p-5"><strong>⭐ You earned Native Verification in {label(l.language)}!</strong><span className="text-sm opacity-70 mt-1">View your practice milestones and consider your next CEFR level.</span></Link>)}
 
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -127,7 +134,7 @@ const NotificationsPage = () => {
               </section>
             )}
 
-            {incomingRequests.length === 0 && acceptedRequests.length === 0 && (
+            {incomingRequests.length === 0 && acceptedRequests.length === 0 && verified.length === 0 && (
               <NoNotificationsFound />
             )}
           </>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router";
-import { BellIcon, HomeIcon, UsersIcon } from "lucide-react";
+import { BellIcon, HomeIcon, UsersIcon, UserIcon } from "lucide-react";
 
 const MobileBottomNav = () => {
   const location = useLocation();
@@ -36,6 +36,7 @@ const MobileBottomNav = () => {
         <BellIcon className="size-5" />
         <span className="btm-nav-label text-[11px]">Alerts</span>
       </Link>
+      <Link to="/dashboard" className={`flex flex-col items-center justify-center gap-0.5 ${currentPath === "/dashboard" ? "active text-primary" : "text-base-content/70"}`}><UserIcon className="size-5" /><span className="btm-nav-label text-[11px]">Dashboard</span></Link>
     </div>
   );
 };

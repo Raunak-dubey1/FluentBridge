@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { nativeLanguages, learningLanguages, label } from "../constants/learning";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import useAuthUser from "../hooks/useAuthUser";
 import { useQuery } from "@tanstack/react-query";
-import { getStreamToken } from "../lib/api";
+import { getStreamToken, getUserFriends } from "../lib/api";
 
 import {
   Channel,
@@ -34,6 +35,11 @@ const ChatPage = () => {
   const [chatError, setChatError] = useState(null);
 
   const { authUser } = useAuthUser();
+  const { data: friends = [] } = useQuery({ queryKey: ["friends"], queryFn: getUserFriends });
+  const partner = friends.find(friend => friend._id === targetUserId);
+  const practiceLanguages = learningLanguages(authUser).filter(l => nativeLanguages(partner).includes(l.language));
+  const [selectedLanguage, setSelectedLanguage] = useState("");
+  const practiceLanguage = practiceLanguages.some(l => l.language === selectedLanguage) ? selectedLanguage : practiceLanguages[0]?.language || "";
 
   const { data: tokenData, isError: tokenError } = useQuery({
     queryKey: ["streamToken"],
@@ -163,6 +169,7 @@ const ChatPage = () => {
 
   return (
     <div className="h-[calc(100dvh-4rem)] w-full flex flex-col overflow-hidden">
+      {!!practiceLanguages.length && <label className="flex items-center gap-3 p-2 bg-base-200 text-sm">Practice language<select className="select select-bordered select-sm" value={practiceLanguage} onChange={e => setSelectedLanguage(e.target.value)}>{practiceLanguages.map(l => <option key={l.language} value={l.language}>{label(l.language)}</option>)}</select></label>}
       <Chat client={chatClient}>
         <Channel channel={channel}>
           <div className="w-full h-full relative flex flex-col overflow-hidden">
@@ -170,7 +177,9 @@ const ChatPage = () => {
             <Window>
               <ChannelHeader />
               <MessageList />
-              <MessageInput focus />
+              <MessageInput focus overrideSubmitHandler={async (message, _cid, customData, options) => {
+                await channel.sendMessage({ ...message, ...customData, ...(practiceLanguage ? { practice_language: practiceLanguage } : {}) }, options);
+              }} />
             </Window>
           </div>
           <Thread />

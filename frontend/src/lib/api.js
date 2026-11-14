@@ -34,8 +34,8 @@ export async function getUserFriends() {
   return response.data;
 }
 
-export async function getRecommendedUsers() {
-  const response = await axiosInstance.get("/users");
+export async function getRecommendedUsers(filters = {}) {
+  const response = await axiosInstance.get("/users", { params: filters });
   return response.data;
 }
 
@@ -61,6 +61,17 @@ export async function acceptFriendRequest(requestId) {
 
 export async function getStreamToken() {
   const response = await axiosInstance.get("/chat/token");
-  console.log(response.data);
   return response.data;
 }
+
+export const updateProfile = async data => (await axiosInstance.put("/users/profile", data)).data;
+export const addLanguage = async data => (await axiosInstance.post("/users/languages", data)).data;
+export const updateLanguage = async ({ language, ...data }) => (await axiosInstance.put(`/users/languages/${encodeURIComponent(language)}`, data)).data;
+export const removeLanguage = async language => (await axiosInstance.delete(`/users/languages/${encodeURIComponent(language)}`)).data;
+export const getEndorsements = async () => {
+  const { data } = await axiosInstance.get("/users/endorsements");
+  if (!Array.isArray(data)) throw new Error("Unexpected endorsements response. Restart the backend and refresh the page.");
+  return data;
+};
+export const endorseUser = async ({ userId, ...data }) => (await axiosInstance.post(`/users/${userId}/endorse`, data)).data;
+export const completeCall = async data => (await axiosInstance.post("/calls/complete", data)).data;

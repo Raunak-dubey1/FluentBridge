@@ -1,3 +1,7 @@
+import LanguageBadges from "../components/LanguageBadges";
+import { LANGUAGES } from "../constants";
+import { LEVELS } from "../constants/learning";
+import toast from "react-hot-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
@@ -14,13 +18,14 @@ import {
   UsersIcon,
 } from "lucide-react";
 
-import { capitialize } from "../lib/utils";
 
-import FriendCard, { getLanguageFlag } from "../components/FriendCard";
+
+import FriendCard from "../components/FriendCard";
 import NoFriendsFound from "../components/NoFriendsFound";
 
 const HomePage = () => {
   const queryClient = useQueryClient();
+  const [filters, setFilters] = useState({ language: "", level: "" });
 
   const [outgoingRequestsIds, setOutgoingRequestsIds] = useState(new Set());
 
@@ -29,9 +34,9 @@ const HomePage = () => {
     queryFn: getUserFriends,
   });
 
-  const { data: recommendedUsers = [], isLoading: loadingUsers } = useQuery({
-    queryKey: ["users"],
-    queryFn: getRecommendedUsers,
+  const { data: recommendedUsers = [], isLoading: loadingUsers, isError: usersError } = useQuery({
+    queryKey: ["users", filters],
+    queryFn: () => getRecommendedUsers(filters),
   });
 
   const { data: outgoingFriendReqs } = useQuery({
@@ -42,6 +47,7 @@ const HomePage = () => {
   // Send friend request
   const { mutate: sendRequestMutation, isPending } = useMutation({
     mutationFn: sendFriendRequest,
+    onError: error => toast.error(error.response?.data?.message || "Unable to send request"),
 
     onSuccess: () => {
       // Refetch outgoing requests after successfully sending
@@ -110,7 +116,11 @@ const HomePage = () => {
             </div>
           </div>
 
-          {loadingUsers ? (
+          <div className="flex flex-wrap gap-3 mb-5">
+            <label className="form-control gap-1 text-sm">Learning language<select className="select select-bordered select-sm" value={filters.language} onChange={e => setFilters({ ...filters, language: e.target.value })}><option value="">All languages</option>{LANGUAGES.map(l => <option key={l} value={l.toLowerCase()}>{l}</option>)}</select></label>
+            <label className="form-control gap-1 text-sm">CEFR level<select className="select select-bordered select-sm" value={filters.level} onChange={e => setFilters({ ...filters, level: e.target.value })}><option value="">All levels</option>{LEVELS.map(([l]) => <option key={l}>{l}</option>)}</select></label>
+          </div>
+          {usersError ? <p role="alert" className="text-error">Could not load partners. Please refresh and try again.</p> : loadingUsers ? (
             <div className="flex justify-center py-12">
               <span className="loading loading-spinner loading-lg" />
             </div>
@@ -160,18 +170,7 @@ const HomePage = () => {
                         </div>
                       </div>
 
-                      {/* Languages */}
-                      <div className="flex flex-wrap gap-1.5">
-                        <span className="badge badge-secondary badge-xs sm:badge-sm">
-                          {getLanguageFlag(user.nativeLanguage)}
-                          Native: {capitialize(user.nativeLanguage)}
-                        </span>
-
-                        <span className="badge badge-outline badge-xs sm:badge-sm">
-                          {getLanguageFlag(user.learningLanguage)}
-                          Learning: {capitialize(user.learningLanguage)}
-                        </span>
-                      </div>
+                      <LanguageBadges user={user} />
 
                       {/* Bio */}
                       {user.bio && (

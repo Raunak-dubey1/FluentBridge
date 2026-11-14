@@ -34,7 +34,7 @@ const Navbar = ({ showSidebar = false }) => {
 
             <ThemeSelector />
 
-            <div className="avatar">
+            <Link to="/dashboard" className="avatar" aria-label="My dashboard">
               <div className="w-8 sm:w-9 rounded-full ring-1 ring-base-300">
                 <img
                   src={authUser?.profilePic}
@@ -43,7 +43,7 @@ const Navbar = ({ showSidebar = false }) => {
                   rel="noreferrer"
                 />
               </div>
-            </div>
+            </Link>
 
             {/* Logout button */}
             <button

@@ -1,3 +1,4 @@
+import { matchUsers, key, LEVELS } from "../lib/learning.js";
 import { User } from "../models/User.js";
 import { FriendRequest } from "../models/FriendRequest.js";
 
@@ -6,14 +7,15 @@ export async function getRecommendedUsers(req,res){
     const currentUserId=req.user._id;
     const currentUser=req.user
 
-    const recommendedUsers=await User.find({
-        $and:[
-            {_id:{$ne:currentUserId}},
-            {_id:{$nin:currentUser.friends}},
-            {isOnboarded:true}
-        ]
-    });
-    res.status(200).json(recommendedUsers)
+    if (req.query.level && !LEVELS.includes(req.query.level)) return res.status(400).json({ message: "Invalid CEFR level" });
+    const candidates = await User.find({ _id: { $nin: [currentUserId, ...currentUser.friends] }, isOnboarded: true })
+      .select("fullName profilePic bio location nativeLanguage learningLanguage nativeLanguages learningLanguages interests availability timezone");
+    const language = key(req.query.language);
+    const recommendedUsers = candidates.filter(candidate => candidate.learningLanguages.some(l => (!language || key(l.language) === language) && (!req.query.level || l.level === req.query.level)) || (!language && !req.query.level))
+      .map(candidate => ({ ...candidate.toJSON(), ...matchUsers(currentUser, candidate) }))
+      .sort((a, b) => b.matchScore - a.matchScore || String(a._id).localeCompare(String(b._id)))
+      .slice(0, 30);
+    res.status(200).json(recommendedUsers);
   }catch(error){
     console.log("Error in handling recommendedUser Controller",error.message);
     res.status(500).json({message:"Internal Server Error"})
@@ -24,9 +26,9 @@ export async function getMyFriends(req,res){
    try{
     const user = await User.findById(req.user._id)
     .select("friends")
-    .populate("friends","fullName profilePic nativeLanguage learnigLanguage");
+    .populate("friends","fullName profilePic nativeLanguage learningLanguage nativeLanguages learningLanguages interests");
 
-    res.status(200).json(user.friends);
+    res.status(200).json(user.friends.filter(Boolean).map(friend => ({ ...friend.toJSON(), ...matchUsers(req.user, friend) })));
    }catch(error){
         console.log("Error in handling getFriend controller",error.meassage);
         res.status(500).json({message:"Internal Server Error"});

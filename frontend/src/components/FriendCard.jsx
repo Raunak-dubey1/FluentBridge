@@ -1,5 +1,5 @@
+import LanguageBadges from "./LanguageBadges";
 import { Link } from "react-router";
-import { LANGUAGE_TO_FLAG } from "../constants/index.js";
 
 const FriendCard = ({ friend }) => {
   return (
@@ -17,12 +17,7 @@ const FriendCard = ({ friend }) => {
           <h3 className="font-semibold truncate text-base">{friend.fullName}</h3>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          <span className="badge badge-secondary text-xs">
-            {getLanguageFlag(friend.nativeLanguage)}
-            Native: {friend.nativeLanguage}
-          </span>
-        </div>
+        <LanguageBadges user={friend} />
 
         <Link to={`/chat/${friend._id}`} className="btn btn-outline btn-sm sm:btn-md w-full">
           Message
@@ -33,21 +28,3 @@ const FriendCard = ({ friend }) => {
 };
 
 export default FriendCard;
-
-export function getLanguageFlag(language) {
-  if (!language) return null;
-
-  const langLower = language.toLowerCase();
-  const countryCode = LANGUAGE_TO_FLAG[langLower];
-
-  if (countryCode) {
-    return (
-      <img
-        src={`https://flagcdn.com/24x18/${countryCode}.png`}
-        alt={`${langLower} flag`}
-        className="h-3 mr-1 inline-block"
-      />
-    );
-  }
-  return null;
-}
