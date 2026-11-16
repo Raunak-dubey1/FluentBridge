@@ -97,8 +97,17 @@ export default function PostCallFeedbackModal({ user, partner, callId, sessionId
             )}
 
             {ratingMutation.isSuccess ? (
-              <div className="alert alert-success text-xs py-2">
-                <span>{ratingMutation.data?.message || "Rating submitted successfully! XP awarded."}</span>
+              <div className="space-y-2">
+                <div className="alert alert-success text-xs py-2">
+                  <span>{ratingMutation.data?.message || "Rating submitted successfully! XP awarded."}</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs w-full opacity-80 hover:opacity-100"
+                  onClick={() => { ratingMutation.reset(); setSuggestion(""); }}
+                >
+                  + Submit another rating or updated feedback
+                </button>
               </div>
             ) : (
               <button className="btn btn-primary btn-sm sm:btn-md w-full" disabled={ratingMutation.isPending}>
