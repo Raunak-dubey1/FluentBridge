@@ -5,11 +5,13 @@ const learningLanguageSchema = new mongoose.Schema({
   language: { type: String, required: true, trim: true, lowercase: true },
   level: { type: String, enum: LEVELS, default: "A1" },
   goal: { type: String, enum: GOALS, default: GOALS[0] },
+  xp: { type: Number, default: 0, min: 0 },
   isVerified: { type: Boolean, default: false },
   stats: {
     callMinutes: { type: Number, default: 0, min: 0 },
     messagesSent: { type: Number, default: 0, min: 0 },
     endorsementsCount: { type: Number, default: 0, min: 0 },
+    ratingsCount: { type: Number, default: 0, min: 0 },
   },
 }, { _id: false });
 const userSchema = new mongoose.Schema({

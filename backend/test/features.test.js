@@ -113,6 +113,33 @@ test("matching weights, case insensitive interests, legacy users and verificatio
   assert.equal(progression({ level: "B1", stats: { callMinutes: 60, endorsementsCount: 3 } }).suggestedLevel, "B2");
   assert.equal(progression({ level: "B1", stats: { callMinutes: 59, endorsementsCount: 3 } }).isVerified, false);
 });
+test("A1 co-learner deadlock, bridge language fallback and polyglot target isolation", () => {
+  const a1NoBridgeA = { nativeLanguages: ["hindi"], learningLanguages: [{ language: "german", level: "A1" }], availability: ["weekends"] };
+  const a1NoBridgeB = { nativeLanguages: ["russian"], learningLanguages: [{ language: "german", level: "A1" }], availability: ["weekends"] };
+  const resNoBridge = matchUsers(a1NoBridgeA, a1NoBridgeB);
+  assert.equal(resNoBridge.hasBridgeLanguage, false);
+  assert.equal(resNoBridge.matchScore, 15);
+  assert.equal(resNoBridge.matchPercentage, 19);
+
+  const a1WithBridgeA = { nativeLanguages: ["hindi", "english"], learningLanguages: [{ language: "german", level: "A1" }], availability: ["weekends"] };
+  const a1WithBridgeB = { nativeLanguages: ["russian", "english"], learningLanguages: [{ language: "german", level: "A1" }], availability: ["weekends"] };
+  const resWithBridge = matchUsers(a1WithBridgeA, a1WithBridgeB);
+  assert.equal(resWithBridge.hasBridgeLanguage, true);
+  assert.equal(resWithBridge.matchScore, 28);
+  assert.ok(resWithBridge.matchScore > resNoBridge.matchScore);
+
+  const b1A = { nativeLanguages: ["hindi"], learningLanguages: [{ language: "german", level: "B1" }], availability: ["weekends"] };
+  const b1B = { nativeLanguages: ["russian"], learningLanguages: [{ language: "german", level: "B1" }], availability: ["weekends"] };
+  const resB1 = matchUsers(b1A, b1B);
+  assert.equal(resB1.matchScore, 35);
+  assert.ok(resB1.matchScore > resWithBridge.matchScore);
+
+  const polyA = { nativeLanguages: ["english"], learningLanguages: [{ language: "japanese", level: "A1" }, { language: "spanish", level: "B1" }] };
+  const polyB = { nativeLanguages: ["french"], learningLanguages: [{ language: "japanese", level: "A1" }, { language: "spanish", level: "B2" }] };
+  const resPoly = matchUsers(polyA, polyB);
+  assert.equal(resPoly.matchedLanguage, "spanish");
+  assert.equal(resPoly.proficiencyFit, true);
+});
 test("call overlap excludes solo time and unions multiple tabs", () => {
   const at = minute => new Date(minute * 60000);
   const own = [{ joinedAt: at(0), leftAt: at(20) }, { joinedAt: at(10), leftAt: at(30) }];
@@ -181,4 +208,31 @@ test("three distinct native endorsements verify a learner and duplicates/non-nat
   const nonNative = await createUser("nonnative", "french", "spanish");
   assert.equal((await request(nonNative, `/api/users/${learner.id}/endorse`, "POST", { language: "spanish", tags: ["Patient"] })).status, 403);
   assert.equal((await request(learner, `/api/users/${learner.id}/endorse`, "POST", { language: "spanish", tags: ["Patient"] })).status, 400);
+});
+test("post-call ratings award XP, scale with level thresholds and trigger automatic CEFR level promotion", async () => {
+  const learner = await createUser("xplearner", "english", "spanish");
+  learner.learningLanguages[0].level = "A1";
+  learner.learningLanguages[0].xp = 80;
+  await learner.save();
+
+  const partner = await createUser("nativePartner", "spanish", "english");
+  await befriend(learner, partner);
+
+  await PracticeCredit.create({ source: "call:xp-1", user: learner._id, peer: partner._id, language: "spanish", kind: "call", amount: 20 });
+  const res = await request(partner, `/api/users/${learner.id}/rate`, "POST", {
+    language: "Spanish",
+    rating: 10,
+    suggestion: "Amazing progress today!",
+    callId: "call-1"
+  });
+  assert.equal(res.status, 201);
+  assert.equal(res.data.leveledUp, true);
+  assert.equal(res.data.newLevel, "A2");
+
+  const updated = await User.findById(learner._id);
+  assert.equal(updated.learningLanguages[0].level, "A2");
+  assert.ok(updated.learningLanguages[0].xp >= 0);
+
+  const selfRes = await request(learner, `/api/users/${learner.id}/rate`, "POST", { language: "Spanish", rating: 10 });
+  assert.equal(selfRes.status, 400);
 });

@@ -74,4 +74,5 @@ export const getEndorsements = async () => {
   return data;
 };
 export const endorseUser = async ({ userId, ...data }) => (await axiosInstance.post(`/users/${userId}/endorse`, data)).data;
+export const rateUser = async ({ userId, ...data }) => (await axiosInstance.post(`/users/${userId}/rate`, data)).data;
 export const completeCall = async data => (await axiosInstance.post("/calls/complete", data)).data;

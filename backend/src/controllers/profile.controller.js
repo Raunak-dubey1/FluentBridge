@@ -3,7 +3,7 @@ import { User } from "../models/User.js";
 import { Endorsement } from "../models/Endorsement.js";
 import { PracticeCredit } from "../models/PracticeCredit.js";
 import { upsertStreamUser } from "../lib/stream.js";
-import { badRequest, text, tags, key, languageInput, ENDORSEMENT_TAGS, progression } from "../lib/learning.js";
+import { badRequest, text, tags, key, languageInput, ENDORSEMENT_TAGS, progression, calculateXpGain, applyXpAndProgress } from "../lib/learning.js";
 
 export function apiError(res, error) {
   if (error.code === 11000) return res.status(409).json({ message: "This record already exists" });
@@ -14,10 +14,12 @@ export function apiError(res, error) {
 }
 export async function restoreStats(user, entry, session) {
   const rows = await PracticeCredit.find({ user: user._id, language: entry.language }).session(session || null);
+  const reviews = await Endorsement.find({ recipient: user._id, language: entry.language }).session(session || null);
   entry.stats = {
     callMinutes: rows.filter(r => r.kind === "call").reduce((n, r) => n + r.amount, 0),
     messagesSent: rows.filter(r => r.kind === "message").reduce((n, r) => n + r.amount, 0),
-    endorsementsCount: await Endorsement.countDocuments({ recipient: user._id, language: entry.language }).session(session || null),
+    endorsementsCount: reviews.length,
+    ratingsCount: reviews.length,
   };
   entry.isVerified = progression(entry).isVerified;
 }
@@ -88,6 +90,70 @@ export async function endorseUser(req, res) {
       await recipient.save({ session });
     });
     res.status(201).json({ message: "Endorsement sent", language, isVerified: recipient.learningLanguages.find(l => l.language === language).isVerified });
+  } catch (error) { apiError(res, error); }
+}
+export async function rateUser(req, res) {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) throw badRequest("Invalid user");
+    if (String(req.user._id) === req.params.id) throw badRequest("You cannot rate yourself");
+    const language = key(text(req.body.language, "language", 60, true));
+    const rating = Math.max(1, Math.min(10, parseInt(req.body.rating, 10) || 10));
+    const suggestion = req.body.suggestion ? text(req.body.suggestion, "suggestion", 300) : (req.body.notes ? text(req.body.notes, "notes", 300) : "");
+    const callId = req.body.callId ? text(req.body.callId, "callId", 100) : "";
+
+    let recipient;
+    let xpAwarded = 0;
+    let progressionResult;
+
+    await mongoose.connection.transaction(async session => {
+      recipient = await User.findById(req.params.id).select("-password").session(session);
+      if (!recipient || !recipient.friends.some(f => String(f) === String(req.user._id))) {
+        throw badRequest("You can only rate practice partners in your friends list");
+      }
+      const entry = recipient.learningLanguages.find(l => l.language === language);
+      if (!entry) throw badRequest("This partner is not learning that language");
+
+      const recentCall = await PracticeCredit.findOne({ 
+        user: recipient._id, 
+        peer: req.user._id, 
+        language, 
+        kind: "call" 
+      }).sort({ createdAt: -1 }).session(session);
+
+      const minutes = recentCall?.amount || 10;
+      const isNative = req.user.nativeLanguages.some(n => key(n) === language);
+      xpAwarded = calculateXpGain(minutes, rating, isNative);
+
+      progressionResult = applyXpAndProgress(entry, xpAwarded);
+      entry.stats = entry.stats || {};
+      entry.stats.ratingsCount = (entry.stats.ratingsCount || 0) + 1;
+
+      await Endorsement.create([{
+        endorser: req.user._id,
+        recipient: recipient._id,
+        language,
+        rating,
+        suggestion,
+        notes: suggestion,
+        callId,
+        tags: req.body.tags || [],
+        xpAwarded
+      }], { session });
+
+      await restoreStats(recipient, entry, session);
+      await recipient.save({ session });
+    });
+
+    res.status(201).json({
+      message: progressionResult.leveledUp 
+        ? `Rating submitted! Level up! Partner reached ${progressionResult.newLevel}!` 
+        : `Rating submitted! +${xpAwarded} XP awarded to partner.`,
+      xpAwarded,
+      rating,
+      suggestion,
+      ...progressionResult,
+      language
+    });
   } catch (error) { apiError(res, error); }
 }
 export async function getEndorsements(req, res) {

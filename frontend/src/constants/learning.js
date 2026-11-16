@@ -6,6 +6,14 @@ export const LEVELS = [
   ["C1", "Advanced", "Flexible, professional communication"],
   ["C2", "Proficient", "Understands and expresses subtle meaning"],
 ];
+export const LEVEL_THRESHOLDS = {
+  A1: 100,  // 100 XP to advance from A1 to A2
+  A2: 250,  // 250 XP to advance from A2 to B1
+  B1: 500,  // 500 XP to advance from B1 to B2
+  B2: 900,  // 900 XP to advance from B2 to C1
+  C1: 1500, // 1500 XP to advance from C1 to C2
+  C2: 2500, // Mastery level
+};
 export const GOALS = ["Casual Conversation", "Career & Business", "Exam Preparation", "Travel & Relocation", "Culture & Media"];
 export const INTERESTS = ["Tech", "Travel", "Gaming", "Literature", "Fitness", "Music", "Cooking", "Anime", "Cinema", "Art", "Sports"];
 export const AVAILABILITY = ["Flexible", "Weekday Mornings", "Weekday Afternoons", "Weekday Evenings", "Weekends"];

@@ -1,4 +1,4 @@
-import { updateProfile, saveLanguage, deleteLanguage, endorseUser, getEndorsements } from "../controllers/profile.controller.js";
+import { updateProfile, saveLanguage, deleteLanguage, endorseUser, rateUser, getEndorsements } from "../controllers/profile.controller.js";
 import express from "express";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { 
@@ -20,6 +20,7 @@ router.put("/languages/:language", saveLanguage);
 router.delete("/languages/:language", deleteLanguage);
 router.get("/endorsements", getEndorsements);
 router.post("/:id/endorse", endorseUser);
+router.post("/:id/rate", rateUser);
 router.get("/",getRecommendedUsers);
 router.get("/friends",getMyFriends);
 

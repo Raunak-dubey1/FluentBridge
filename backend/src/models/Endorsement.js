@@ -4,8 +4,12 @@ const schema = new mongoose.Schema({
   endorser: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   recipient: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   language: { type: String, required: true, lowercase: true, trim: true },
+  rating: { type: Number, min: 1, max: 10, default: 10 },
+  suggestion: { type: String, maxlength: 300, default: "" },
+  xpAwarded: { type: Number, default: 0 },
+  callId: { type: String, default: "" },
   tags: [{ type: String, enum: ENDORSEMENT_TAGS }],
-  notes: { type: String, maxlength: 200, default: "" },
+  notes: { type: String, maxlength: 300, default: "" },
 }, { timestamps: true });
-schema.index({ endorser: 1, recipient: 1, language: 1 }, { unique: true });
+schema.index({ endorser: 1, recipient: 1, language: 1, callId: 1 }, { unique: true });
 export const Endorsement = mongoose.model("Endorsement", schema);
