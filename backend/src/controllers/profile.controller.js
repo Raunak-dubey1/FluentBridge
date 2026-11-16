@@ -79,13 +79,15 @@ export async function endorseUser(req, res) {
     if (!req.user.nativeLanguages.some(n => key(n) === language)) return res.status(403).json({ message: "You must be a native speaker of this language" });
     const practiced = await PracticeCredit.exists({ user: req.params.id, peer: req.user._id, language, kind: "call", amount: { $gt: 0 } });
     if (!practiced) return res.status(403).json({ message: "A verified practice call in this language is required first. Try again after call processing." });
+    const existing = await Endorsement.findOne({ endorser: req.user._id, recipient: req.params.id, language, isLegacyEndorsement: true });
+    if (existing) return res.status(409).json({ message: "This record already exists" });
     let recipient;
     await mongoose.connection.transaction(async session => {
       recipient = await User.findById(req.params.id).select("-password").session(session);
       if (!recipient || !recipient.friends.some(f => String(f) === String(req.user._id))) throw badRequest("You can endorse practice partners in your friends list");
       const entry = recipient.learningLanguages.find(l => l.language === language);
       if (!entry) throw badRequest("This partner is not learning that language");
-      await Endorsement.create([{ endorser: req.user._id, recipient: recipient._id, language, tags: selectedTags, notes }], { session });
+      await Endorsement.create([{ endorser: req.user._id, recipient: recipient._id, language, tags: selectedTags, notes, isLegacyEndorsement: true }], { session });
       await restoreStats(recipient, entry, session);
       await recipient.save({ session });
     });

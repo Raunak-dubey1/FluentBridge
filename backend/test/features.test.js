@@ -233,6 +233,17 @@ test("post-call ratings award XP, scale with level thresholds and trigger automa
   assert.equal(updated.learningLanguages[0].level, "A2");
   assert.ok(updated.learningLanguages[0].xp >= 0);
 
+  // Rate again later for the same language - allows continuous feedback across calls
+  const secondRes = await request(partner, `/api/users/${learner.id}/rate`, "POST", {
+    language: "Spanish",
+    rating: 9,
+    suggestion: "Even better vocabulary 10 days later!"
+  });
+  assert.equal(secondRes.status, 201);
+  const updatedTwice = await User.findById(learner._id);
+  assert.ok(updatedTwice.learningLanguages[0].xp > updated.learningLanguages[0].xp);
+  assert.equal(updatedTwice.learningLanguages[0].stats.ratingsCount, 2);
+
   const selfRes = await request(learner, `/api/users/${learner.id}/rate`, "POST", { language: "Spanish", rating: 10 });
   assert.equal(selfRes.status, 400);
 });

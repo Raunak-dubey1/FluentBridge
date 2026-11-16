@@ -19,6 +19,7 @@ import toast from "react-hot-toast";
 
 import ChatLoader from "../components/ChatLoader";
 import CallButton from "../components/CallButton";
+import PostCallFeedbackModal from "../components/PostCallFeedbackModal";
 
 const rawApiKey = import.meta.env.VITE_STREAM_API_KEY || "";
 const STREAM_API_KEY = rawApiKey.replace(/['"]/g, "").trim();
@@ -33,6 +34,7 @@ const ChatPage = () => {
   const [channel, setChannel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [chatError, setChatError] = useState(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   const { authUser } = useAuthUser();
   const { data: friends = [] } = useQuery({ queryKey: ["friends"], queryFn: getUserFriends });
@@ -174,9 +176,19 @@ const ChatPage = () => {
         <Channel channel={channel}>
           <div className="w-full h-full relative flex flex-col overflow-hidden">
             <Window>
-              <div className="chat-channel-header">
+              <div className="chat-channel-header flex items-center">
                 <ChannelHeader />
-                <CallButton handleVideoCall={handleVideoCall} />
+                <div className="flex items-center gap-1 shrink-0 ml-auto mr-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowRatingModal(true)}
+                    className="btn btn-ghost btn-xs sm:btn-sm text-warning font-medium gap-1"
+                    title="Rate practice & give feedback"
+                  >
+                    ★ Rate
+                  </button>
+                  <CallButton handleVideoCall={handleVideoCall} />
+                </div>
               </div>
               <MessageList />
               <MessageInput focus overrideSubmitHandler={async (message, _cid, customData, options) => {
@@ -187,6 +199,13 @@ const ChatPage = () => {
           <Thread />
         </Channel>
       </Chat>
+      {showRatingModal && partner && (
+        <PostCallFeedbackModal
+          user={authUser}
+          partner={partner}
+          onClose={() => setShowRatingModal(false)}
+        />
+      )}
     </div>
   );
 };

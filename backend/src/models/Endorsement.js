@@ -10,6 +10,8 @@ const schema = new mongoose.Schema({
   callId: { type: String, default: "" },
   tags: [{ type: String, enum: ENDORSEMENT_TAGS }],
   notes: { type: String, maxlength: 300, default: "" },
+  isLegacyEndorsement: { type: Boolean, default: false },
 }, { timestamps: true });
-schema.index({ endorser: 1, recipient: 1, language: 1, callId: 1 }, { unique: true });
+schema.index({ recipient: 1, language: 1, createdAt: -1 });
+schema.index({ endorser: 1, recipient: 1 });
 export const Endorsement = mongoose.model("Endorsement", schema);
