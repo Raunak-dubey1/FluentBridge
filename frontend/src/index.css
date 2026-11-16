@@ -46,3 +46,22 @@
 .str-chat__message-input {
   border-top: 1px solid #ddd;
 }
+
+/* Reserve room for the call action even when the partner's name is long. */
+.chat-channel-header {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 0;
+  gap: 8px;
+  padding-right: 12px;
+  background: var(--str-chat__channel-header-background-color);
+  border-bottom: var(--str-chat__channel-header-border-block-end);
+}
+
+.chat-channel-header > .str-chat__channel-header {
+  flex: 1;
+  min-width: 0;
+  box-shadow: none;
+  border: 0;
+}

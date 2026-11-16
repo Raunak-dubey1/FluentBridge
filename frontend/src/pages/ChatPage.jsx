@@ -173,9 +173,11 @@ const ChatPage = () => {
       <Chat client={chatClient}>
         <Channel channel={channel}>
           <div className="w-full h-full relative flex flex-col overflow-hidden">
-            <CallButton handleVideoCall={handleVideoCall} />
             <Window>
-              <ChannelHeader />
+              <div className="chat-channel-header">
+                <ChannelHeader />
+                <CallButton handleVideoCall={handleVideoCall} />
+              </div>
               <MessageList />
               <MessageInput focus overrideSubmitHandler={async (message, _cid, customData, options) => {
                 await channel.sendMessage({ ...message, ...customData, ...(practiceLanguage ? { practice_language: practiceLanguage } : {}) }, options);
